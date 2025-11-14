@@ -1,1 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Web Interface</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* CSS for the animated starfield effect */
+        @keyframes move-starfield {
+            /* Moves the background image diagonally over time */
+            from { background-position: 0 0; }
+            to { background-position: -10000px 5000px; }
+        }
+
+        /* Custom styles for aesthetic appeal and full-screen layout (Space Theme) */
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Deep space background: Dark purple to indigo gradient */
+            background: linear-gradient(135deg, #0D0032 0%, #150050 50%, #2A006A 100%);
+            color: #E0E7FF; /* Light, bright text color */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1.5rem;
+            position: relative; 
+            overflow-x: hidden;
+        }
+
+        /* Pseudo-element for the animated starfield layer */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1; /* Place behind all content */
+            /* Generate a star pattern using radial gradients */
+            background: 
+                /* Smallest, densest layer of stars */
+                radial-gradient(2px 2px at 50% 50%, #eee, rgba(0,0,0,0)),
+                /* Medium layer of stars */
+                radial-gradient(3px 3px at 30% 70%, #ddd, rgba(0,0,0,0)),
+                /* Larger, sparser layer of stars */
+                radial-gradient(4px 4px at 70% 20%, #ccc, rgba(0,0,0,0));
+            background-repeat: repeat;
+            background-size: 2000px 2000px; /* Defines the size of the repeatable pattern */
+            animation: move-starfield 120s linear infinite; /* Apply the slow animation */
+        }
+
+        /* Subtle glow and dark, semi-transparent background for the card */
+        .card {
+            box-shadow: 0 0 40px rgba(79, 70, 229, 0.4); /* Indigo glow */
+            background-color: rgba(17, 24, 39, 0.7); /* Semi-transparent dark card */
+            border: 1px solid rgba(79, 70, 229, 0.5); /* Light border */
+            backdrop-filter: blur(5px); /* Add a slight blur (frosted glass) effect */
+        }
+        
+        /* Iframe container with a glowing border */
+        #contentFrameContainer {
+            border-color: #6366F1;
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.8);
+            background-color: #0d0d1f; /* Even darker frame background */
+        }
+
+        /* Custom glow button style: Purple to Indigo gradient */
+        .primary-button {
+            background: linear-gradient(90deg, #8B5CF6, #6366F1); /* Purple to Indigo */
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.6); /* Purple shadow */
+            transition: all 0.3s ease-in-out; /* Added transition for smooth hover effects */
+        }
+        .primary-button:hover {
+            background: linear-gradient(90deg, #9C6FE6, #7C82FA); /* Slightly lighter gradient */
+            box-shadow: 0 4px 25px rgba(179, 148, 255, 0.8); /* Stronger, lighter purple shadow for pulse effect */
+            transform: scale(1.02); /* Slight lift on hover */
+        }
+
+        /* Ensure input elements fit the dark theme and are readable */
+        input#urlInput {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: #4F46E5; /* Indigo border */
+            color: #E0E7FF; /* Light text color */
+        }
+        input#urlInput::placeholder {
+            color: #9CA3AF; /* Light gray placeholder */
+        }
+        input#urlInput:focus {
+            --tw-ring-color: #A78BFA; /* Light purple focus ring */
+        }
+
+        /* Make status messages stand out on the dark background */
+        #statusMessage {
+            opacity: 1; /* Override transition opacity */
+        }
+
+        .text-gray-900 { color: #E0E7FF; } /* Global text color adjustment for headings */
+        .text-gray-500 { color: #BEC5E0; } /* Subtitle color adjustment */
+    </style>
+    <!-- Icon library for the fullscreen button -->
+    <script src="https://kit.fontawesome.com/a7c36d0f8d.js" crossorigin="anonymous"></script> 
+</head>
+<body>
+
+    <!-- Outer wrapper to manage layout -->
+    <div id="wrapper" class="w-full max-w-4xl space-y-6">
+
+        <!-- Input/Status Card (Centered at the top) -->
+        <div class="card p-8 md:p-10 rounded-xl w-full transition-all duration-300 max-w-lg mx-auto">
+            
+            <h1 class="text-3xl font-bold text-gray-900 mb-4 text-center">Secure Access Portal</h1>
+            <p class="text-gray-500 mb-8 text-center">Enter the URL you wish to load securely.</p>
+
+            <!-- Input Form (allows Enter key submission) -->
+            <form id="urlForm" class="space-y-4">
+                <input 
+                    type="url" 
+                    id="urlInput" 
+                    placeholder="https://example.com" 
+                    class="w-full px-5 py-3 border rounded-lg focus:outline-none focus:ring-2 transition duration-150 text-gray-700"
+                    required
+                >
+
+                <button 
+                    type="submit"
+                    id="submitButton" 
+                    class="w-full primary-button text-white font-semibold py-3 rounded-lg transition duration-300 ease-in-out transform hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-indigo-500/50"
+                >
+                    Start Session
+                </button>
+            </form>
+
+            <!-- Status Message Box -->
+            <div id="statusMessage" class="mt-6 p-4 rounded-lg hidden text-sm font-medium transition-opacity duration-500">
+                <!-- Content will be inserted here by JavaScript -->
+            </div>
+
+        </div>
+
+        <!-- Frame Controls (Full Screen Button) -->
+        <div id="frameControls" class="flex justify-end hidden">
+            <button 
+                id="fullscreenButton"
+                class="px-4 py-2 primary-button text-sm text-white font-medium rounded-lg transition duration-200"
+                title="View content in full screen"
+            >
+                <i class="fas fa-expand mr-2"></i> Full Screen
+            </button>
+        </div>
+
+        <!-- Content Frame Container -->
+        <!-- This container holds the iframe where the requested website will attempt to load -->
+        <div id="contentFrameContainer" class="hidden w-full h-[60vh] border-4 rounded-xl overflow-hidden shadow-2xl transition-all duration-500">
+            <iframe id="contentFrame" src="about:blank" title="Loaded Content" class="w-full h-full border-none"></iframe>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlForm = document.getElementById('urlForm');
+            const urlInput = document.getElementById('urlInput');
+            const submitButton = document.getElementById('submitButton');
+            const statusMessage = document.getElementById('statusMessage');
+            const contentFrame = document.getElementById('contentFrame');
+            const contentFrameContainer = document.getElementById('contentFrameContainer');
+            const frameControls = document.getElementById('frameControls');
+            const fullscreenButton = document.getElementById('fullscreenButton');
+            
+            let statusTimeout; // Variable to hold the setTimeout ID for clearing the message
+
+            /**
+             * Function to display status messages and automatically hide them after 5 seconds.
+             */
+            function showMessage(text, type) {
+                statusMessage.textContent = text;
+                statusMessage.classList.remove('hidden', 'opacity-0');
+                statusMessage.classList.add('opacity-100');
+
+                // Reset classes
+                statusMessage.classList.remove('bg-red-900/50', 'text-red-300', 'bg-green-900/50', 'text-green-300', 'bg-indigo-900/50', 'text-indigo-300');
+
+                // Adjust classes for dark mode visibility
+                if (type === 'error') {
+                    statusMessage.classList.add('bg-red-900/50', 'text-red-300'); 
+                } else if (type === 'success') {
+                    statusMessage.classList.add('bg-green-900/50', 'text-green-300'); 
+                } else {
+                    // Default info status (e.g., processing)
+                    statusMessage.classList.add('bg-indigo-900/50', 'text-indigo-300'); 
+                }
+                
+                // Clear previous timeout and set a new one to hide the message
+                clearTimeout(statusTimeout);
+                statusTimeout = setTimeout(() => {
+                    statusMessage.classList.add('opacity-0');
+                    // Use transitionend to set 'hidden' after the fade effect finishes
+                    statusMessage.addEventListener('transitionend', function hide() {
+                        if (statusMessage.classList.contains('opacity-0')) {
+                            statusMessage.classList.add('hidden');
+                            statusMessage.removeEventListener('transitionend', hide);
+                        }
+                    });
+                }, 5000); // Hide after 5 seconds
+            }
+
+            /**
+             * Function to safely check if a string looks like a URL.
+             */
+            function isValidUrl(string) {
+                try {
+                    const url = new URL(string);
+                    // Basic check for http or https protocols
+                    return url.protocol === 'http:' || url.protocol === 'https:';
+                } catch (e) {
+                    return false;
+                }
+            }
+
+            /**
+             * Core function to handle form submission and load the URL into the iframe.
+             */
+            function handleSubmission(event) {
+                event.preventDefault();
+                const url = urlInput.value.trim();
+
+                if (!url) {
+                    showMessage("Please enter a URL to proceed.", 'error');
+                    return;
+                }
+
+                // Normalize URL: If the URL doesn't start with 'http' or 'https',
+                // we now default to 'http://' as requested.
+                const fullUrl = url.startsWith('http') ? url : `http://${url}`;
+
+                if (!isValidUrl(fullUrl)) {
+                    showMessage("The entered text is not a valid URL format (e.g., http://website.com or https://website.com).", 'error');
+                    return;
+                }
+                
+                // 1. Show processing message and disable button
+                showMessage(`Attempting to load: ${fullUrl}. Check the frame below...`, 'info');
+                submitButton.disabled = true;
+
+                // 2. Make the iframe container and controls visible
+                contentFrameContainer.classList.remove('hidden');
+                frameControls.classList.remove('hidden');
+                
+                // 3. Define load handlers
+                
+                const cleanup = () => {
+                    submitButton.disabled = false;
+                    contentFrame.removeEventListener('load', loadHandler);
+                    contentFrame.removeEventListener('error', errorHandler);
+                };
+                
+                const loadHandler = () => {
+                    showMessage(`Load attempt finished for: ${fullUrl}. Click "Full Screen" for a better view.`, 'success');
+                    cleanup();
+                };
+                
+                const errorHandler = () => {
+                     // Note: This often fires even if the site is blocked by X-Frame-Options/CSP, 
+                     // as the browser stops loading the resource due to policy.
+                     showMessage(`Load failed (or blocked by security policy) for: ${fullUrl}. Try a different URL.`, 'error');
+                     cleanup();
+                };
+
+                // Clear previous listeners to prevent duplicates and reset frame
+                contentFrame.src = 'about:blank'; 
+                contentFrame.addEventListener('load', loadHandler);
+                contentFrame.addEventListener('error', errorHandler);
+                
+                // 4. Load the URL into the iframe
+                contentFrame.src = fullUrl;
+
+                // Optional: Clear the input after loading
+                urlInput.value = '';
+            }
+
+            // Attach event listener to the form to handle both click and Enter key
+            urlForm.addEventListener('submit', handleSubmission);
+
+
+            // Fullscreen logic
+            fullscreenButton.addEventListener('click', () => {
+                try {
+                    // Request fullscreen on the iframe container
+                    if (contentFrameContainer.requestFullscreen) {
+                        contentFrameContainer.requestFullscreen();
+                    } else if (contentFrameContainer.webkitRequestFullscreen) { /* Safari */
+                        contentFrameContainer.webkitRequestFullscreen();
+                    } else if (contentFrameContainer.msRequestFullscreen) { /* IE11 */
+                        contentFrameContainer.msRequestFullscreen();
+                    } else {
+                        showMessage("Your browser does not fully support the Fullscreen API.", 'error');
+                    }
+                } catch (e) {
+                    // Catch the disallowed by permissions policy error and log it
+                    console.error("Fullscreen Error:", e);
+                    // Display a user-friendly message explaining the limitation
+                    showMessage("Fullscreen denied: The hosting environment may restrict this action for security purposes.", 'error');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+
+
 
